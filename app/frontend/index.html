@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CP Tracker</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Competitive Programming Tracker</h1>
+
+        <div class="search-box">
+            <input
+                id="handle"
+                type="text"
+                placeholder="Enter Codeforces Handle"
+            >
+
+            <button onclick="searchUser()">
+                Search
+            </button>
+        </div>
+
+        <div class="profile-card">
+
+            <h2 id="user-name">User</h2>
+
+            <div class="profile-info">
+                <p><strong>Rank:</strong> <span id="rank">-</span></p>
+                <p><strong>Current Rating:</strong> <span id="rating">-</span></p>
+                <p><strong>Max Rating:</strong> <span id="max-rating">-</span></p>
+                <p><strong>Contribution:</strong> <span id="contribution">-</span></p>
+            </div>
+
+        </div>
+
+        <div class="stats-section">
+
+            <div class="stat-card">
+                <p>Solved</p>
+                <h3><span id="solved">-</span></h3>
+            </div>
+
+            <div class="stat-card">
+                <p>Contest</p>
+                <h3><span id="contest">-</span></h3>
+            </div>
+
+            <div class="stat-card">
+                <p>Best Rank</p>
+                <h3><span id="best_rank">-</span></h3>
+            </div>
+
+            <div class="stat-card">
+                <p>Worst Rank</p>
+                <h3><span id="worst_rank">-</span></h3>
+            </div>
+
+        </div>
+
+        <div class="bottom-section">
+
+            <div class="chart-box">
+
+                <h2>Rating History</h2>
+
+                <canvas id="rating-chart"></canvas>
+
+            </div>
+
+            <div class="tag-box">
+
+                <h2>Top Tags</h2>
+
+                <div class="tag-list" id="tag-list">
+
+                </div>  
+
+            </div>
+
+        </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
