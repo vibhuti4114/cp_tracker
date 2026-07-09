@@ -1,6 +1,8 @@
 
 import httpx
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
+from app.repositories.cf_profile import get_cached_profile,create_catched_profile
 
 BASE_URL = "https://codeforces.com/api"
 
@@ -57,7 +59,17 @@ async def get_contests(handle:str):
 # Services
 # ----------------------------------------------------------------------------------------------------
 
-async def get_profile(handle :str):
+async def get_profile(handle :str,db:Session):
+    cached=get_cached_profile(db,handle)
+    if(cached):
+        print("Return From Database",cached.handle)
+        return{
+            "handle": cached.handle,
+            "rating": cached.rating,
+            "max_rating": cached.max_rating,
+            "rank": cached.rank
+        }
+    print("Fetched From codeforces")
     url=f"{BASE_URL}/user.info?handles={handle}"
     async with httpx.AsyncClient(timeout=30.0) as client:
         response=await client.get(url)
@@ -71,13 +83,15 @@ async def get_profile(handle :str):
         )
     
     user=data["result"][0]
-
-    return {
+    profile_details={
         "handle": user["handle"],
         "rating": user.get("rating"),
         "max_rating": user.get("maxRating"),
         "rank": user.get("rank"),
     }
+    create_catched_profile(db,profile_details)
+
+    return profile_details
 
 async def get_solved_count(handle :str):
     solved=await get_unique_solved(handle)
