@@ -6,6 +6,8 @@ class ProfileResponse(BaseModel):
     rating:int | None=None
     max_rating:int | None=None
     rank:str | None=None
+    first_name:str | None=None
+    last_name:str | None=None
 
 class SolvedResponse(BaseModel):
     handle:str

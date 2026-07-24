@@ -1,0 +1,15 @@
+
+from enum import Enum as pythonEnum
+from sqlalchemy import Column,Integer,String,DateTime,ForeignKey,Enum,Boolean
+from app.database.database import Base
+from datetime import datetime
+from sqlalchemy.orm import relationship
+
+class User(Base):
+    __tablename__="users"
+    id=Column(Integer,primary_key=True, index=True)
+    username=Column(String,unique=True,nullable=False,index=True)
+    email=Column(String,unique=True,nullable=False,index=True)
+    password_hash=Column(String,nullable=False)
+    created_at=Column(DateTime,default=datetime.utcnow)
+    accounts=relationship("LinkedAccount",back_populates="user")

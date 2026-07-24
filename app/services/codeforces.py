@@ -1,8 +1,10 @@
 
 import httpx
+from sqlalchemy import DateTime
+from datetime import datetime,timedelta
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from app.repositories.cf_profile import get_cached_profile,create_catched_profile
+from app.repositories.cf_profile import get_cached_profile,create_cached_profile,update_cached_profile
 
 BASE_URL = "https://codeforces.com/api"
 
@@ -59,16 +61,22 @@ async def get_contests(handle:str):
 # Services
 # ----------------------------------------------------------------------------------------------------
 
-async def get_profile(handle :str,db:Session):
+async def get_profile(handle :str,db:Session,use_catch=True):
     cached=get_cached_profile(db,handle)
-    if(cached):
-        print("Return From Database",cached.handle)
-        return{
-            "handle": cached.handle,
-            "rating": cached.rating,
-            "max_rating": cached.max_rating,
-            "rank": cached.rank
-        }
+    if use_catch:
+        now_time=datetime.utcnow()
+        if cached:
+            print("Found From Database",cached.handle)
+            if cached.updated_at>now_time-timedelta(minutes=10):
+                print("Fresh")
+                return{
+                    "handle": cached.handle,
+                    "rating": cached.rating,
+                    "max_rating": cached.max_rating,
+                    "rank": cached.rank,
+                    "first_name":cached.first_name,
+                    "last_name":cached.last_name
+                }
     print("Fetched From codeforces")
     url=f"{BASE_URL}/user.info?handles={handle}"
     async with httpx.AsyncClient(timeout=30.0) as client:
@@ -88,8 +96,15 @@ async def get_profile(handle :str,db:Session):
         "rating": user.get("rating"),
         "max_rating": user.get("maxRating"),
         "rank": user.get("rank"),
+        "first_name":user.get("firstName"),
+        "last_name":user.get("lastName")
     }
-    create_catched_profile(db,profile_details)
+    if cached:
+        print("Not fresh update ")
+        update_cached_profile(db,profile_details)
+    else:
+        print("insert new data")
+        create_cached_profile(db,profile_details)
 
     return profile_details
 

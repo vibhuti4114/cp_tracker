@@ -10,4 +10,7 @@ class CachedProfile(Base):
     rank=Column(String)
     rating=Column(Integer)
     max_rating=Column(Integer)
-    updated_at=Column(DateTime,default=datetime.utcnow)
+    first_name=Column(String)
+    last_name=Column(String)
+    updated_at=Column(DateTime,default=datetime.utcnow,onupdate=datetime.utcnow)
+
