@@ -1,13 +1,15 @@
 
-from fastapi import APIRouter
+from fastapi import APIRouter,Depends
 from app.services.codeforces import (get_profile,get_solved_count,get_stats,get_tags,get_contest_details,get_rating_history)
 from app.schemas.codeforces import(ProfileResponse,SolvedResponse,StatsResponse,TagsResponse,ContestResponse,RatingHistoryItem)
+from app.database.dependencies import get_db
+from sqlalchemy.orm import Session
 
 router=APIRouter()
 
 @router.get("/{handle}", response_model=ProfileResponse)
-async def profiles(handle: str):
-    return await get_profile(handle)    
+async def profile(handle: str,db:Session=Depends(get_db)):
+    return await get_profile(handle,db)
 
 @router.get("/{handle}/solved", response_model=SolvedResponse)
 async def solved_count(handle:str):
