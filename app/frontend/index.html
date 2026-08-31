@@ -4,89 +4,365 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CP Tracker</title>
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<base target="_blank">
 </head>
-
 <body>
+    <!-- ====================================================
+         THEME TOGGLE BUTTON
+         This one button lives on every screen (login, register,
+         and the dashboard) because it's fixed to the corner of
+         the page instead of being inside any one view.
+         script.js swaps the moon icon for a sun icon (and back)
+         depending on which theme is active.
+    ==================================================== -->
+    <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Switch to dark mode">
+        <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+        </svg>
+        <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+    </button>
 
-    <div class="container">
+    <!-- ==================== LOGIN VIEW ==================== -->
+    <div id="login-view" class="auth-view">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-logo">
+                    <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="32" height="32" rx="8" fill="var(--accent)"/>
+                        <path d="M10 22L16 10L22 22H10Z" stroke="white" stroke-width="2" stroke-linejoin="round" fill="none"/>
+                        <circle cx="16" cy="18" r="2" fill="white"/>
+                    </svg>
+                    <span class="auth-logo-text">CP Tracker</span>
+                </div>
+                <h1 class="auth-title">Welcome back</h1>
+                <p class="auth-subtitle">Sign in to your competitive programming tracker</p>
+                <form id="loginForm" class="auth-form" novalidate>
+                    <div class="form-group">
+                        <label for="loginIdentifier" class="form-label">Username or Email</label>
+                        <input type="text" id="loginIdentifier" class="form-input" placeholder="you@example.com or your username" autocomplete="username" required>
+                        <span class="form-error" id="loginIdentifierError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword" class="form-label">Password</label>
+                        <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password" autocomplete="current-password" required>
+                        <span class="form-error" id="loginPasswordError"></span>
+                    </div>
+                    <button type="submit" class="auth-btn btn-primary" id="loginBtn">
+                        <span class="btn-text">Sign In</span>
+                        <span class="btn-loader" hidden>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                        </span>
+                    </button>
+                </form>
+                <div class="auth-footer">
+                    <span>Don't have an account?</span>
+                    <button class="auth-link" id="goToRegister">Create account</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <h1>Competitive Programming Tracker</h1>
+    <!-- ==================== REGISTER VIEW ==================== -->
+    <div id="register-view" class="auth-view" hidden>
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-logo">
+                    <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="32" height="32" rx="8" fill="var(--accent)"/>
+                        <path d="M10 22L16 10L22 22H10Z" stroke="white" stroke-width="2" stroke-linejoin="round" fill="none"/>
+                        <circle cx="16" cy="18" r="2" fill="white"/>
+                    </svg>
+                    <span class="auth-logo-text">CP Tracker</span>
+                </div>
+                <h1 class="auth-title">Create account</h1>
+                <p class="auth-subtitle">Start tracking your competitive programming journey</p>
+                <form id="registerForm" class="auth-form" novalidate>
+                    <div class="form-group">
+                        <label for="regUsername" class="form-label">Username</label>
+                        <input type="text" id="regUsername" class="form-input" placeholder="Choose a username" autocomplete="username" required>
+                        <span class="form-error" id="regUsernameError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail" class="form-label">Email</label>
+                        <input type="email" id="regEmail" class="form-input" placeholder="you@example.com" autocomplete="email" required>
+                        <span class="form-error" id="regEmailError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword" class="form-label">Password</label>
+                        <input type="password" id="regPassword" class="form-input" placeholder="Create a password" autocomplete="new-password" required minlength="6">
+                        <span class="form-error" id="regPasswordError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="regConfirmPassword" class="form-label">Confirm Password</label>
+                        <input type="password" id="regConfirmPassword" class="form-input" placeholder="Confirm your password" autocomplete="new-password" required>
+                        <span class="form-error" id="regConfirmPasswordError"></span>
+                    </div>
+                    <button type="submit" class="auth-btn btn-primary" id="registerBtn">
+                        <span class="btn-text">Create Account</span>
+                        <span class="btn-loader" hidden>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                        </span>
+                    </button>
+                </form>
+                <div class="auth-footer">
+                    <span>Already have an account?</span>
+                    <button class="auth-link" id="goToLogin">Sign in</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <div class="search-box">
-            <input
-                id="handle"
-                type="text"
-                placeholder="Enter Codeforces Handle"
-            >
+    <!-- ==================== DASHBOARD VIEW ==================== -->
+    <div id="dashboard-view" class="dashboard-view" hidden>
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <span class="mobile-logo-text">CP Tracker</span>
+            <div class="mobile-spacer"></div>
+        </header>
 
-            <button onclick="searchUser()">
-                Search
+        <!-- Overlay for mobile sidebar -->
+        <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+        <div class="app-container">
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+                <div class="sidebar-header">
+                    <div class="logo">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="32" height="32" rx="8" fill="var(--accent)"/>
+                            <path d="M10 22L16 10L22 22H10Z" stroke="white" stroke-width="2" stroke-linejoin="round" fill="none"/>
+                            <circle cx="16" cy="18" r="2" fill="white"/>
+                        </svg>
+                        <span class="logo-text">CP Tracker</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-user" id="sidebarUser"></div>
+
+                <div class="sidebar-section">
+                    <h3 class="sidebar-section-title">Linked Accounts</h3>
+                    <nav class="accounts-list" id="accountsList" aria-label="Linked accounts"></nav>
+                </div>
+
+                <div class="sidebar-actions">
+                    <button class="sidebar-btn btn-primary" id="addAccountBtn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Account
+                    </button>
+                    <button class="sidebar-btn btn-secondary" id="syncAllBtn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
+                        </svg>
+                        Sync All
+                    </button>
+                    <button class="sidebar-btn btn-ghost" id="logoutBtn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <header class="page-header">
+                    <h1 class="page-title">Dashboard</h1>
+                    <button class="sync-btn" id="syncBtn" aria-label="Sync account data">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
+                        </svg>
+                        <span>Sync</span>
+                    </button>
+                </header>
+
+                <section class="profile-section" id="profileSection" aria-label="Profile information"></section>
+
+                <section class="graph-section" aria-label="Rating history graph">
+                    <div class="section-header">
+                        <h2 class="section-title">Rating History</h2>
+                    </div>
+                    <div class="graph-card">
+                        <div class="graph-container">
+                            <canvas id="ratingChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="contest-section" aria-label="Contest history">
+                    <div class="section-header">
+                        <h2 class="section-title">Contest History</h2>
+                    </div>
+                    <div class="contest-card">
+                        <div class="table-wrapper">
+                            <table class="contest-table" id="contestTable">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Contest</th>
+                                        <th scope="col">Rank</th>
+                                        <th scope="col">Old Rating</th>
+                                        <th scope="col">New Rating</th>
+                                        <th scope="col">Rating Gain</th>
+                                        <th scope="col">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contestTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+    <div class="modal-overlay" id="modalOverlay" aria-hidden="true"></div>
+
+    <!-- Add Account Modal -->
+    <div class="modal" id="addAccountModal" role="dialog" aria-modal="true" aria-labelledby="addAccountTitle" hidden>
+        <div class="modal-header">
+            <h2 class="modal-title" id="addAccountTitle">Add Account</h2>
+            <button class="modal-close" id="closeAddAccountModal" aria-label="Close modal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
         </div>
-
-        <div class="profile-card">
-
-            <h2 id="user-name">User</h2>
-
-            <div class="profile-info">
-                <p><strong>Rank:</strong> <span id="rank">-</span></p>
-                <p><strong>Current Rating:</strong> <span id="rating">-</span></p>
-                <p><strong>Max Rating:</strong> <span id="max-rating">-</span></p>
-                <p><strong>Contribution:</strong> <span id="contribution">-</span></p>
-            </div>
-
+        <div class="modal-body">
+            <form id="addAccountForm" novalidate>
+                <div class="form-group">
+                    <label for="addAccountPlatform" class="form-label">Platform</label>
+                    <select id="addAccountPlatform" class="form-input form-select" required>
+                        <option value="" disabled selected>Select a platform</option>
+                        <option value="CODEFORCES">Codeforces</option>
+                        <option value="LEETCODE">LeetCode</option>
+                        <option value="ATCODER">AtCoder</option>
+                        <option value="CODECHEF">CodeChef</option>
+                    </select>
+                    <span class="form-error" id="addAccountPlatformError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="addAccountHandle" class="form-label">Handle</label>
+                    <input type="text" id="addAccountHandle" class="form-input" placeholder="Enter your handle" required>
+                    <span class="form-error" id="addAccountHandleError"></span>
+                </div>
+            </form>
         </div>
-
-        <div class="stats-section">
-
-            <div class="stat-card">
-                <p>Solved</p>
-                <h3><span id="solved">-</span></h3>
-            </div>
-
-            <div class="stat-card">
-                <p>Contest</p>
-                <h3><span id="contest">-</span></h3>
-            </div>
-
-            <div class="stat-card">
-                <p>Best Rank</p>
-                <h3><span id="best_rank">-</span></h3>
-            </div>
-
-            <div class="stat-card">
-                <p>Worst Rank</p>
-                <h3><span id="worst_rank">-</span></h3>
-            </div>
-
+        <div class="modal-footer">
+            <button class="modal-btn btn-ghost" id="cancelAddAccount">Cancel</button>
+            <button class="modal-btn btn-primary" id="submitAddAccount">
+                <span class="btn-text">Add Account</span>
+                <span class="btn-loader" hidden>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                </span>
+            </button>
         </div>
-
-        <div class="bottom-section">
-
-            <div class="chart-box">
-
-                <h2>Rating History</h2>
-
-                <canvas id="rating-chart"></canvas>
-
-            </div>
-
-            <div class="tag-box">
-
-                <h2>Top Tags</h2>
-
-                <div class="tag-list" id="tag-list">
-
-                </div>  
-
-            </div>
-
-        </div>
-
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Verify Account Modal -->
+    <div class="modal" id="verifyAccountModal" role="dialog" aria-modal="true" aria-labelledby="verifyAccountTitle" hidden>
+        <div class="modal-header">
+            <h2 class="modal-title" id="verifyAccountTitle">Verify Account</h2>
+            <button class="modal-close" id="closeVerifyModal" aria-label="Close modal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Step 1: ask the server for a one-time code -->
+            <div class="verify-step" id="verifyStepStart">
+                <p class="modal-desc">
+                    To prove this account is yours, we'll give you a short code.
+                    Put it in your <strong>first name</strong> on your platform
+                    profile, then come back and press Verify Now.
+                </p>
+            </div>
+
+            <!-- Step 2: shown after we have a code, ask the user to confirm -->
+            <div class="verify-step" id="verifyStepCode" hidden>
+                <p class="modal-desc">Copy this code:</p>
+                <div class="verify-code-box">
+                    <span class="verify-code-text" id="verifyCodeText">--------</span>
+                    <button type="button" class="verify-copy-btn" id="copyVerifyCodeBtn">Copy</button>
+                </div>
+                <p class="modal-desc">
+                    Paste it into your first name on your platform profile, save
+                    it, then press "Verify Now" below.
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn btn-ghost" id="cancelVerify">Cancel</button>
+            <button class="modal-btn btn-primary" id="submitVerify">
+                <span class="btn-text">Get My Code</span>
+                <span class="btn-loader" hidden>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div class="modal" id="deleteAccountModal" role="dialog" aria-modal="true" aria-labelledby="deleteAccountTitle" hidden>
+        <div class="modal-header">
+            <h2 class="modal-title" id="deleteAccountTitle">Delete Linked Account</h2>
+            <button class="modal-close" id="closeDeleteModal" aria-label="Close modal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-desc">Are you sure you want to delete this linked account? This action cannot be undone.</p>
+            <div class="modal-info-row">
+                <span class="modal-info-label">Platform</span>
+                <span class="modal-info-value" id="deleteModalPlatform">—</span>
+            </div>
+            <div class="modal-info-row">
+                <span class="modal-info-label">Handle</span>
+                <span class="modal-info-value" id="deleteModalHandle">—</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn btn-ghost" id="cancelDelete">Cancel</button>
+            <button class="modal-btn btn-danger" id="confirmDelete">
+                <span class="btn-text">Delete</span>
+                <span class="btn-loader" hidden>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer" role="status" aria-live="polite"></div>
+
     <script src="script.js"></script>
 </body>
 </html>

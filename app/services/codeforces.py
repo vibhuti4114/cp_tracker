@@ -1,10 +1,6 @@
 
 import httpx
-from sqlalchemy import DateTime
-from datetime import datetime,timedelta
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
-from app.repositories.cf_profile import get_cached_profile,create_cached_profile,update_cached_profile
 
 BASE_URL = "https://codeforces.com/api"
 
@@ -12,7 +8,7 @@ BASE_URL = "https://codeforces.com/api"
 # Helper Function
 # ----------------------------------------------------------------------------------------------------
 
-async def get_submissions(handle: str):
+async def fetch_submissions(handle: str):
     url = f"{BASE_URL}/user.status?handle={handle}"
 
     async with httpx.AsyncClient(timeout=30.0) as client:
@@ -27,8 +23,8 @@ async def get_submissions(handle: str):
 
     return data["result"]
 
-async def get_unique_solved(handle:str):
-    submission=await get_submissions(handle)
+async def fetch_unique_solved(handle:str):
+    submission=await fetch_submissions(handle)
     solved={}
 
     for sub in submission:
@@ -42,7 +38,7 @@ async def get_unique_solved(handle:str):
 
     return solved
 
-async def get_contests(handle:str):
+async def fetch_contests(handle:str):
     url=f"{BASE_URL}/user.rating?handle={handle}"
     async with httpx.AsyncClient(timeout=30.0) as client:
         response=await client.get(url)
@@ -61,27 +57,11 @@ async def get_contests(handle:str):
 # Services
 # ----------------------------------------------------------------------------------------------------
 
-async def get_profile(handle :str,db:Session,use_catch=True):
-    cached=get_cached_profile(db,handle)
-    if use_catch:
-        now_time=datetime.utcnow()
-        if cached:
-            print("Found From Database",cached.handle)
-            if cached.updated_at>now_time-timedelta(minutes=10):
-                print("Fresh")
-                return{
-                    "handle": cached.handle,
-                    "rating": cached.rating,
-                    "max_rating": cached.max_rating,
-                    "rank": cached.rank,
-                    "first_name":cached.first_name,
-                    "last_name":cached.last_name
-                }
-    print("Fetched From codeforces")
+async def fetch_profile(handle :str):
+    
     url=f"{BASE_URL}/user.info?handles={handle}"
     async with httpx.AsyncClient(timeout=30.0) as client:
         response=await client.get(url)
-
     data=response.json()
 
     if data["status"]!="OK":
@@ -99,48 +79,18 @@ async def get_profile(handle :str,db:Session,use_catch=True):
         "first_name":user.get("firstName"),
         "last_name":user.get("lastName")
     }
-    if cached:
-        print("Not fresh update ")
-        update_cached_profile(db,profile_details)
-    else:
-        print("insert new data")
-        create_cached_profile(db,profile_details)
-
     return profile_details
 
-async def get_solved_count(handle :str):
-    solved=await get_unique_solved(handle)
+async def fetch_solved_count(handle :str):
+    solved=await fetch_unique_solved(handle)
 
     return {
         "handle": handle,
         "problems_solved": len(solved)
     }
 
-async def get_stats(handle:str):
-    solved=await get_unique_solved(handle)
-    ratings=[]
-
-    for problem in solved.values():
-        if "rating" in problem:
-            ratings.append(problem["rating"])
-    
-    max_rating_solved=None
-    avg_rating_solved=None
-
-    if ratings:
-        avg_rating_solved=round(sum(ratings)/len(ratings))
-        max_rating_solved=max(ratings)
-
-    return {
-        "handle": handle,
-        "problems_solved": len(solved),
-        "average_rating_solved": avg_rating_solved,
-        "max_rating_solved": max_rating_solved
-    }
-
-
-async def get_tags(handle:str):
-    solved=await get_unique_solved(handle)
+async def fetch_tags(handle:str):
+    solved=await fetch_unique_solved(handle)
     tag={}
 
     for problem in solved.values():
@@ -161,8 +111,8 @@ async def get_tags(handle:str):
     }
 
 
-async def get_contest_details(handle:str):
-    contests=await get_contests(handle)
+async def build_contest_stats(handle:str):
+    contests=await fetch_contests(handle)
 
     if not contests:
         return{
@@ -187,13 +137,17 @@ async def get_contest_details(handle:str):
     }
 
 
-async def get_rating_history(handle:str):
-    contests=await get_contests(handle)
+async def fetch_rating_history(handle:str):
+    contests=await fetch_contests(handle)
     return [
         {
             "contest_name":c["contestName"],
             "old_rating":c["oldRating"],
-            "new_rating":c["newRating"]
+            "new_rating":c["newRating"],
+            "rating_gain":c["newRating"]-c["oldRating"],
+            "rating_update_time":c["ratingUpdateTimeSeconds"],
+            "rank":c["rank"],
+            "contest_id":c["contestId"]
         }
         for c in contests
     ]
