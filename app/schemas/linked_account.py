@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from app.models import PlatformType
 
-class LinkAccountCreate(BaseModel):
+class LinkAccount(BaseModel):
     platform:PlatformType
     handle:str
 
