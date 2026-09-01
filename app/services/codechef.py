@@ -1,7 +1,8 @@
 import httpx
 import re
 import json
-from datetime import datetime,timezone
+from bs4 import BeautifulSoup
+from datetime import datetime, timezone
 
 async def fetch_profile(handle:str):
     url=f"https://www.codechef.com/users/{handle}"
@@ -35,18 +36,15 @@ async def fetch_profile(handle:str):
         if match:
             max_rating=int(match.group(1))
 
-    match=re.search(r'"name"\s*:\s*"([^"]*)"',html)
-    if match:
-        name=match.group(1)
+    soup=BeautifulSoup(html,"html.parser")
 
-    if name is None:
-        match=re.search(
-            r'<div[^>]*class="[^"]*user-name[^"]*"[^>]*>\s*([^<]+)',
-            html,
-            re.IGNORECASE
-        )
-        if match:
-            name=match.group(1).strip()
+    name_tag=soup.find("h1")
+
+    if name_tag:
+        name=name_tag.get_text(" ",strip=True)
+
+    if name==handle:
+        name=None
 
     match=re.search(
         r'(?:all_rating|ratingData)\s*[:=]\s*(\[.*?\])',
@@ -66,6 +64,7 @@ async def fetch_profile(handle:str):
             for x in rating_data
             if x.get("rating")
         ]
+
         if ratings:
             current_rating=ratings[-1]
 
@@ -75,10 +74,11 @@ async def fetch_profile(handle:str):
             for x in rating_data
             if x.get("rating")
         ]
+
         if ratings:
             max_rating=max(ratings)
 
-    return {
+    return{
         "handle":handle,
         "name":name,
         "current_rating":current_rating,

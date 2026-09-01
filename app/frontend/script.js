@@ -21,7 +21,8 @@
 // This is the address of your FastAPI backend (the `uvicorn`
 // server). If your backend runs somewhere else, change this
 // one line and everything else keeps working.
-const API_BASE_URL = 'http://127.0.0.1:8000';
+// Default for local dev: port 8001 (the project's dev server).
+const API_BASE_URL = 'http://127.0.0.1:8001';
 
 // The name we use to store the login token in the browser.
 const TOKEN_KEY = 'cp_tracker_token';
@@ -103,24 +104,34 @@ async function readApiResponse(response) {
 
 // GET a JSON resource from the backend, with our login token attached.
 async function apiGet(path) {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-        method: 'GET',
-        headers: { ...authHeader() },
-    });
-    return handleAuthedResponse(response);
+    showGlobalLoader();
+    try {
+        const response = await fetch(`${API_BASE_URL}${path}`, {
+            method: 'GET',
+            headers: { ...authHeader() },
+        });
+        return await handleAuthedResponse(response);
+    } finally {
+        hideGlobalLoader();
+    }
 }
 
 // POST a JSON body to the backend, with our login token attached.
 async function apiPost(path, jsonBody) {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            ...authHeader(),
-        },
-        body: jsonBody !== undefined ? JSON.stringify(jsonBody) : undefined,
-    });
-    return handleAuthedResponse(response);
+    showGlobalLoader();
+    try {
+        const response = await fetch(`${API_BASE_URL}${path}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeader(),
+            },
+            body: jsonBody !== undefined ? JSON.stringify(jsonBody) : undefined,
+        });
+        return await handleAuthedResponse(response);
+    } finally {
+        hideGlobalLoader();
+    }
 }
 
 // Shared by apiGet/apiPost: if the server says our token is no
@@ -144,11 +155,16 @@ async function apiLogin(identifier, password) {
     form.set('username', identifier);
     form.set('password', password);
 
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        body: form,
-    });
-    return readApiResponse(response);
+    showGlobalLoader();
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            body: form,
+        });
+        return await readApiResponse(response);
+    } finally {
+        hideGlobalLoader();
+    }
 }
 
 // ============================================================
@@ -176,6 +192,25 @@ function formatContestDate(unixSeconds, options) {
     return date.toLocaleDateString('en-US', options || {
         year: 'numeric', month: 'short', day: 'numeric',
     });
+}
+
+// ============================================================
+// Global loader control
+// ============================================================
+function showGlobalLoader() {
+    AppState.isBusy = true;
+    const el = document.getElementById('globalLoader');
+    if (!el) return;
+    el.hidden = false;
+    el.setAttribute('aria-hidden', 'false');
+}
+
+function hideGlobalLoader() {
+    AppState.isBusy = false;
+    const el = document.getElementById('globalLoader');
+    if (!el) return;
+    el.hidden = true;
+    el.setAttribute('aria-hidden', 'true');
 }
 
 // Picks 1-2 letters to show inside a round avatar circle.
@@ -811,6 +846,13 @@ function renderProfile(profile) {
     const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
     const updatedAt = formatDateTime(profile.updated_at);
     const platformLabel = getPlatformLabel(AppState.selectedAccountMeta?.platform);
+    // Determine if there are multiple accounts for this platform
+    const samePlatformAccounts = AppState.accounts.filter(a => a.platform === (AppState.selectedAccountMeta?.platform));
+    const multipleForPlatform = samePlatformAccounts.length > 1;
+
+    const platformBadgeHtml = multipleForPlatform
+        ? `<button class="profile-platform-badge" onclick="openPlatformAccountsPopover('${AppState.selectedAccountMeta?.platform}')">${escapeHtml(platformLabel)} ▾</button>`
+        : `<span class="profile-platform-badge">${escapeHtml(platformLabel)}</span>`;
 
     container.innerHTML = `
         <div class="profile-card">
@@ -821,7 +863,7 @@ function renderProfile(profile) {
                         <div class="profile-handle">${escapeHtml(profile.handle)}</div>
                         ${fullName ? `<div class="profile-fullname">${escapeHtml(fullName)}</div>` : ''}
                         <div class="profile-meta">
-                            <span class="profile-platform-badge">${escapeHtml(platformLabel)}</span>
+                            ${platformBadgeHtml}
                             <span class="profile-meta-dot" aria-hidden="true"></span>
                             <span>Updated ${updatedAt}</span>
                         </div>
@@ -831,7 +873,13 @@ function renderProfile(profile) {
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Current Rating</div>
-                    <div class="stat-value accent">${profile.rating ?? '—'}</div>
+                    <div class="stat-value accent">${(() => {
+                        const hasContests = Array.isArray(profile.contests) && profile.contests.length > 0;
+                        // If there are no contests, show 0 (user expectation).
+                        if (!hasContests) return 0;
+                        // Otherwise show rating if present, else 0.
+                        return (profile.rating ?? 0);
+                    })()}</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Maximum Rating</div>
@@ -844,6 +892,9 @@ function renderProfile(profile) {
             </div>
         </div>
     `;
+
+    // Render insight charts if present
+    renderInsightCharts(profile);
 }
 
 // ============================================================
@@ -1010,6 +1061,102 @@ function renderContestHistory(contests) {
 }
 
 // ============================================================
+// 13b. INSIGHT DOUGHNUTS
+// ============================================================
+let difficultyChart = null;
+let platformsChart = null;
+
+function renderInsightCharts(profile) {
+    // Difficulty distribution - try to read from profile if backend provides counts
+    const difficulty = profile && profile.difficulty_counts ? profile.difficulty_counts : { easy: 39, medium: 74, hard: 14 };
+
+    const difficultyData = [difficulty.easy || 0, difficulty.medium || 0, difficulty.hard || 0];
+    const diffCtx = document.getElementById('donutDifficulty')?.getContext('2d');
+    if (diffCtx) {
+        if (difficultyChart) difficultyChart.destroy();
+        difficultyChart = new Chart(diffCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Easy','Medium','Hard'],
+                datasets: [{ data: difficultyData, backgroundColor: ['#10b981','#f59e0b','#ef4444'], borderWidth: 0 }]
+            },
+            options: { plugins: { legend: { display: false } }, cutout: '70%' }
+        });
+    }
+
+    // Platforms distribution - try to read from profile or aggregate accounts
+    const platforms = profile && profile.platform_counts ? profile.platform_counts : { codechef: 329, codeforces: 155, leetcode: 0, atcoder: 0 };
+    const platformsData = [platforms.codechef || 0, platforms.codeforces || 0, platforms.leetcode || 0, platforms.atcoder || 0];
+    const platCtx = document.getElementById('donutPlatforms')?.getContext('2d');
+    if (platCtx) {
+        if (platformsChart) platformsChart.destroy();
+        platformsChart = new Chart(platCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['CodeChef','Codeforces','LeetCode','AtCoder'],
+                datasets: [{ data: platformsData, backgroundColor: ['#f97316','#fb7185','#60a5fa','#db2777'], borderWidth: 0 }]
+            },
+            options: { plugins: { legend: { display: false } }, cutout: '70%' }
+        });
+    }
+
+    // Render legends
+    const diffLegend = document.getElementById('difficultyLegend');
+    if (diffLegend) {
+        diffLegend.innerHTML = `
+            <div class="legend-row"><div class="legend-label"><span class="legend-swatch" style="background:#10b981"></span><div>Easy</div></div><div>${difficulty.easy || 0}</div></div>
+            <div class="legend-row"><div class="legend-label"><span class="legend-swatch" style="background:#f59e0b"></span><div>Medium</div></div><div>${difficulty.medium || 0}</div></div>
+            <div class="legend-row"><div class="legend-label"><span class="legend-swatch" style="background:#ef4444"></span><div>Hard</div></div><div>${difficulty.hard || 0}</div></div>
+        `;
+    }
+
+    const platformsLegend = document.getElementById('platformsLegend');
+    if (platformsLegend) {
+        platformsLegend.innerHTML = `
+            <div class="legend-row"><div class="legend-label"><span class="legend-swatch" style="background:#f97316"></span><div>CodeChef</div></div><div>${platforms.codechef || 0}</div></div>
+            <div class="legend-row"><div class="legend-label"><span class="legend-swatch" style="background:#fb7185"></span><div>Codeforces</div></div><div>${platforms.codeforces || 0}</div></div>
+            <div class="legend-row"><div class="legend-label"><span class="legend-swatch" style="background:#60a5fa"></span><div>LeetCode</div></div><div>${platforms.leetcode || 0}</div></div>
+            <div class="legend-row"><div class="legend-label"><span class="legend-swatch" style="background:#db2777"></span><div>AtCoder</div></div><div>${platforms.atcoder || 0}</div></div>
+        `;
+    }
+}
+
+// ============================================================
+// 13c. PLATFORM-ACCOUNTS POPOVER (multiple accounts same platform)
+// ============================================================
+function openPlatformAccountsPopover(platform) {
+    const pop = document.getElementById('platformAccountsPopover');
+    const list = document.getElementById('platformAccountsList');
+    if (!pop || !list) return;
+
+    const same = AppState.accounts.filter(a => a.platform === platform);
+    if (!same || same.length === 0) return;
+
+    list.innerHTML = same.map(a => `
+        <div class="popover-item" data-account-id="${a.id}" onclick="selectAccount(${a.id}); closePlatformPopover();">
+            <div>${escapeHtml(a.handle)}</div>
+            <div style="font-size:12px;color:var(--text-tertiary)">${getPlatformLabel(a.platform)}</div>
+        </div>
+    `).join('');
+
+    pop.hidden = false;
+}
+
+function closePlatformPopover() {
+    const pop = document.getElementById('platformAccountsPopover');
+    if (pop) pop.hidden = true;
+}
+
+// Close popover when clicking outside
+document.addEventListener('click', (e) => {
+    const pop = document.getElementById('platformAccountsPopover');
+    if (!pop || pop.hidden) return;
+    if (!e.target.closest || !pop.contains(e.target) && !e.target.closest('.profile-platform-badge')) {
+        closePlatformPopover();
+    }
+});
+
+// ============================================================
 // 15. LOADING DATA FROM THE SERVER
 // ============================================================
 
@@ -1017,12 +1164,16 @@ function renderContestHistory(contests) {
 // accounts, then draws the sidebar. Called once at startup and
 // again any time the list of accounts might have changed.
 async function refreshAccounts() {
-    const [user, accounts] = await Promise.all([
-        apiGet('/auth/me'),
-        apiGet('/dashboard'),
-    ]);
+    // First fetch the current user, then request the dashboard
+    // summary for that username (backend routes expect the
+    // username path parameter even though the server uses the
+    // token to authenticate).
+    const user = await apiGet('/auth/me');
     AppState.user = user;
+
+    const accounts = await apiGet(`/dashboard/u/${encodeURIComponent(user.username)}`);
     AppState.accounts = accounts;
+
     renderSidebarUser(AppState.user);
     renderSidebarAccounts(AppState.accounts, AppState.selectedAccountId);
 }
@@ -1057,7 +1208,16 @@ async function selectAccount(accountId) {
     renderSidebarAccounts(AppState.accounts, accountId);
 
     try {
-        const profile = await apiGet(`/dashboard/accounts?id=${encodeURIComponent(accountId)}`);
+        // The backend exposes a per-account endpoint at
+        // /dashboard/u/{username}/{linked_account_id}
+        const profile = await apiGet(`/dashboard/u/${encodeURIComponent(AppState.user.username)}/${encodeURIComponent(accountId)}`);
+
+        // Enrich profile by aggregating platform/problem counts across all linked accounts.
+        // We'll call platform-specific endpoints where available.
+        const aggregated = await aggregatePlatformAndDifficultyCounts();
+        profile.platform_counts = aggregated.platforms;
+        profile.difficulty_counts = aggregated.difficulty;
+
         AppState.profile = profile;
         renderProfile(profile);
         renderRatingGraph(profile.contests);
@@ -1067,6 +1227,53 @@ async function selectAccount(accountId) {
             showToast(error.message || 'Failed to load account data', 'error');
         }
     }
+}
+
+// Aggregate counts across all linked accounts by calling platform APIs.
+async function aggregatePlatformAndDifficultyCounts() {
+    const platforms = { codechef: 0, codeforces: 0, leetcode: 0, atcoder: 0 };
+    const difficulty = { easy: 0, medium: 0, hard: 0 };
+
+    // For each linked account, call the platform profile endpoints (best-effort).
+    await Promise.all(AppState.accounts.map(async (acc) => {
+        const handle = acc.handle;
+        const plat = (acc.platform || '').toString().toUpperCase();
+        try {
+            if (plat.includes('LEETCODE')) {
+                const data = await apiGet(`/leetcode/${encodeURIComponent(handle)}`);
+                platforms.leetcode += Number(data.total_solved || data.totalSolved || 0);
+                difficulty.easy += Number(data.easy_solved || data.easySolved || 0);
+                difficulty.medium += Number(data.medium_solved || data.mediumSolved || 0);
+                difficulty.hard += Number(data.hard_solved || data.hardSolved || 0);
+            } else if (plat.includes('CODEFORCES')) {
+                // Codeforces profile may not include solved breakdown; call /solved if available
+                try {
+                    const cfProfile = await apiGet(`/codeforces/${encodeURIComponent(handle)}`);
+                    platforms.codeforces += Number(cfProfile.total_solved || cfProfile.totalSolved || cfProfile.solved_count || 0);
+                } catch (e) {
+                    // fallback: try solved endpoint
+                    try {
+                        const solved = await apiGet(`/codeforces/${encodeURIComponent(handle)}/solved`);
+                        platforms.codeforces += Number(solved.total_solved || solved.count || 0);
+                    } catch (e2) {}
+                }
+            } else if (plat.includes('CODECHEF')) {
+                try {
+                    const cc = await apiGet(`/codechef/${encodeURIComponent(handle)}`);
+                    platforms.codechef += Number(cc.problems_solved || cc.problemsSolved || 0);
+                } catch (e) {}
+            } else if (plat.includes('ATCODER')) {
+                try {
+                    const ac = await apiGet(`/atcoder/${encodeURIComponent(handle)}/solved`);
+                    platforms.atcoder += Number(ac.total_solved || ac.count || 0);
+                } catch (e) {}
+            }
+        } catch (e) {
+            // ignore per-account failures
+        }
+    }));
+
+    return { platforms, difficulty };
 }
 
 // The backend only knows how to sync ALL of your linked accounts

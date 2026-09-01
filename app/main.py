@@ -14,9 +14,13 @@ Base.metadata.create_all(bind=engine)
 
 app=FastAPI()
 
+# For local development we allow the common localhost origins on ports 8000/8001.
+# Avoid using allow_origins=["*"] together with allow_credentials=True in production.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+"*"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

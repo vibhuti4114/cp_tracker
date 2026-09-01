@@ -24,6 +24,9 @@ class DashboardAccountResponse(BaseModel):
     last_name:str | None=None
     updated_at:datetime
     contests:list[RatingHistoryItem]
+    # Aggregated counts across platforms and difficulties (optional)
+    difficulty_counts: dict | None = None
+    platform_counts: dict | None = None
     model_config={
         "from_attributes": True
     }

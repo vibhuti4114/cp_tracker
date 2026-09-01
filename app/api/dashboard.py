@@ -13,11 +13,12 @@ router=APIRouter(
     tags=["dashboard"]
 )
 
+
 @router.get("/u/{username}",response_model=list[DashboardSummary])
-def get_dashboard(user:User=Depends(get_current_user)):
-    return dashboard_data(user)
+def get_dashboard(username: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return dashboard_data(db, username, user)
 
 
 @router.get("/u/{username}/{linked_account_id}",response_model=DashboardAccountResponse)
-def get_dashboard(id:int,user:User=Depends(get_current_user),db:Session=Depends(get_db)):
-    return account_data(user,db,id)
+async def get_dashboard_account(username: str, linked_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return await account_data(db, username, linked_account_id, user)

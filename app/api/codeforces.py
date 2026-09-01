@@ -9,7 +9,7 @@ router=APIRouter()
 
 @router.get("/{handle}", response_model=ProfileResponse)
 async def profile(handle: str,db:Session=Depends(get_db)):
-    return await fetch_profile(handle,db)
+    return await fetch_profile(handle)
 
 @router.get("/{handle}/solved", response_model=SolvedResponse)
 async def solved_count(handle:str):

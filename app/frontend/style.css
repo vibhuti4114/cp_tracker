@@ -370,6 +370,58 @@ select:focus-visible {
     margin-bottom: var(--space-xl);
 }
 
+/* -------------------------
+   Split layout for login/register
+   ------------------------- */
+.split{
+    display:flex;
+    min-height:100vh;
+    align-items:stretch;
+}
+.split-left{
+    flex:1.1;
+    min-width:380px;
+    background: linear-gradient(90deg, rgba(11,111,168,0.06), rgba(11,111,168,0.02));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:64px;
+}
+.left-content{ max-width:520px; text-align:left }
+.illustration{ border-radius:16px; margin-bottom:28px; box-shadow:0 8px 24px rgba(11,111,168,0.08); overflow:hidden }
+.left-text h2{ margin:0 0 8px; font-size:28px; color:#07243a; font-weight:600 }
+.left-text p{ margin:0; color:var(--text-secondary); line-height:1.5 }
+.split-right{ width:460px; display:flex; align-items:center; justify-content:center; padding:48px; background:transparent }
+.auth-container{ width:100%; max-width:420px }
+.auth-card{ background:var(--bg-primary); border-radius:14px; padding:28px; box-shadow:var(--shadow-lg); border:1px solid rgba(11,111,168,0.06) }
+.auth-logo{ display:flex; gap:12px; align-items:center; margin-bottom:8px }
+.auth-logo-text{ font-weight:700; color:#0b5375 }
+.auth-title{ margin:8px 0 6px; font-size:20px; color:#07243a }
+.auth-subtitle{ margin:0 0 18px; color:var(--text-secondary); font-size:13px }
+.form-group{ margin-bottom:14px }
+.form-row{ display:flex; gap:12px }
+.form-group.half{ flex:1 }
+.form-label{ display:block; margin-bottom:6px; font-size:13px; color:#234b60 }
+.form-input{ width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(15,23,36,0.08); background:#fff; font-size:14px; color:#083047; outline:none; transition:box-shadow .12s, border-color .12s }
+.form-input:focus{ box-shadow:0 6px 18px rgba(11,111,168,0.12); border-color:var(--accent) }
+.form-actions-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px }
+.checkbox{ display:flex; gap:8px; align-items:center; color:var(--text-secondary); font-size:13px }
+.checkbox input{ width:16px; height:16px }
+.forgot-link{ color:var(--accent); text-decoration:none; font-size:13px }
+.auth-btn{ width:100%; padding:12px 14px; border-radius:10px; font-weight:600; border:0; cursor:pointer }
+.btn-primary{ background:linear-gradient(180deg,var(--accent),#095e92); color:#fff; box-shadow:0 8px 20px rgba(11,111,168,0.18) }
+.btn-primary:active{ transform:translateY(1px) }
+.btn-loader{ display:inline-flex; align-items:center; justify-content:center }
+.auth-footer{ display:flex; gap:8px; align-items:center; justify-content:center; margin-top:14px; color:var(--text-secondary); font-size:13px }
+.auth-link{ background:none; border:0; color:var(--accent); cursor:pointer; font-weight:600 }
+
+@media (max-width:920px){
+    .split{flex-direction:column}
+    .split-left{min-height:220px;padding:28px}
+    .split-right{width:100%;padding:28px}
+    .split-left, .split-right{min-width:unset}
+}
+
 /* --------------------------------------------
    Form Elements
    -------------------------------------------- */
@@ -1358,6 +1410,7 @@ select:focus-visible {
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
+.profile-platform-badge { cursor: pointer }
 
 .profile-meta {
     display: flex;
@@ -1462,6 +1515,120 @@ select:focus-visible {
     height: 360px;
     width: 100%;
 }
+
+/* Dashboard two-column layout */
+.dashboard-grid{
+    display:grid;
+    grid-template-columns: 1fr 340px;
+    gap: var(--space-2xl);
+    align-items:start;
+}
+.left-column{display:block}
+.right-column{display:flex;flex-direction:column;gap:var(--space-2xl)}
+.insight-card{background-color:var(--bg-card);border-radius:var(--radius-xl);border:1px solid var(--border-primary);box-shadow:var(--shadow-card);padding:var(--space-xl)}
+.insight-body{display:flex;flex-direction:column;align-items:center;gap:var(--space-md)}
+.insight-legend{width:100%;margin-top:6px;display:flex;flex-direction:column;gap:8px}
+.insight-legend .legend-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;background:var(--bg-secondary)}
+.insight-legend .legend-label{display:flex;align-items:center;gap:12px}
+.insight-legend .legend-swatch{width:12px;height:12px;border-radius:4px;flex-shrink:0}
+
+/* Platform accounts popover */
+.platform-popover{position:fixed;right:calc(var(--space-2xl) + 16px);top:160px;width:260px;background:var(--bg-card);border:1px solid var(--border-primary);box-shadow:var(--shadow-modal);border-radius:12px;z-index:600;padding:8px}
+.platform-popover .popover-header{font-weight:600;padding:10px 12px;border-bottom:1px solid var(--border-secondary)}
+.platform-popover .popover-list{display:flex;flex-direction:column}
+.platform-popover .popover-item{padding:10px 12px;cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:space-between}
+.platform-popover .popover-item:hover{background:var(--bg-hover)}
+
+@media (max-width:1024px){
+    .dashboard-grid{grid-template-columns: 1fr}
+    .right-column{order:2}
+}
+
+/* Mobile / small tablet adjustments - make layout more spacious and touch-friendly */
+@media (max-width:920px){
+    /* Sidebar becomes off-canvas and toggles with .open */
+    .sidebar{
+        transform: translateX(-100%);
+        width: 80%;
+        max-width: 320px;
+        box-shadow: none;
+    }
+    .sidebar.open{
+        transform: translateX(0);
+        box-shadow: var(--shadow-lg);
+        background-color: var(--bg-sidebar);
+    }
+
+    .sidebar-overlay{ display:block }
+
+    /* Main content flows full width on small screens */
+    .main-content{
+        margin-left: 0;
+        padding: var(--space-xl);
+        max-width: 100%;
+    }
+
+    /* More generous spacing for touch targets */
+    .sidebar-btn, .auth-btn { padding: 14px 16px; border-radius: 12px; }
+
+    /* Slightly smaller graphs on mobile to fit comfortably */
+    .graph-container{ height: 260px }
+
+    /* Stack insights below main graphs and reduce card padding */
+    .dashboard-grid{ gap: var(--space-xl) }
+    .insight-card{ padding: var(--space-md) }
+
+    /* Auth view tweaks */
+    .split{ flex-direction: column }
+    .split-left{ padding: 20px; min-height: 200px }
+    .split-right{ padding: 20px }
+    .left-content{ text-align: center }
+    .illustration{ margin-bottom: 18px }
+    .auth-card{ padding: 20px; border-radius: 12px }
+
+    /* Readability tweaks */
+    .auth-title{ font-size: 18px }
+    .auth-subtitle{ font-size: 13px }
+    .form-input{ padding: 12px }
+}
+
+/* Subtle humanizing touches: softer shadows and gentle hover lifts */
+.auth-card, .insight-card, .graph-card, .contest-card {
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.auth-card:hover, .insight-card:hover, .graph-card:hover, .contest-card:hover {
+    transform: translateY(-4px);
+}
+
+/* Improve legibility on very small screens */
+@media (max-width:420px){
+    html{ font-size: 13px }
+    .graph-container{ height: 220px }
+    .auth-card{ padding: 16px }
+    .left-text h2{ font-size: 20px }
+    .left-text p{ font-size: 13px }
+}
+
+/* Global loader overlay */
+.global-loader{
+    position: fixed;
+    inset: 0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: rgba(15,23,36,0.25);
+    z-index: 9999;
+    backdrop-filter: blur(3px);
+}
+.global-loader[hidden]{
+    display: none !important;
+}
+.loader-inner{ display:flex; flex-direction:column; align-items:center; gap:12px; padding:18px; border-radius:12px; background: rgba(255,255,255,0.9); box-shadow: var(--shadow-lg); }
+[data-theme="dark"] .loader-inner{ background: rgba(10,12,18,0.88); color: var(--text-primary) }
+.loader-spinner{ animation: rotate 1s linear infinite }
+.loader-spinner .path{ stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 80; stroke-dashoffset: 60 }
+.loader-text{ font-size:14px; color:var(--text-primary); font-weight:600 }
+@keyframes rotate{ from{ transform: rotate(0deg) } to{ transform: rotate(360deg) } }
 
 /* --------------------------------------------
    Contest Section

@@ -1,9 +1,9 @@
 import httpx
 from fastapi import HTTPException
 
-LEETCODE_GRAPHQL_URL="https://leetcode.com/graphql"
+LEETCODE_GRAPHQL_URL = "https://leetcode.com/graphql"
 
-PROFILE_QUERY="""
+PROFILE_QUERY = """
 query getUserProfile($username:String!){
     allQuestionsCount{
         difficulty
@@ -39,7 +39,7 @@ query getUserProfile($username:String!){
 }
 """
 
-CONTEST_QUERY="""
+CONTEST_QUERY = """
 query userContestRankingInfo($username:String!) {
     userContestRanking(username:$username) {
         attendedContestsCount
@@ -60,91 +60,114 @@ query userContestRankingInfo($username:String!) {
 }
 """
 
-async def fetch_profile(handle:str):
-    payload={
-        "query":PROFILE_QUERY,
-        "variables":{"username":handle}
+
+async def fetch_profile(handle: str):
+    payload = {
+        "query": PROFILE_QUERY,
+        "variables": {"username": handle}
     }
-    headers={
-        "Content-Type":"application/json",
-        "Referer":f"https://leetcode.com/u/{handle}/",
-        "User-Agent":"Mozilla/5.0"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Referer": f"https://leetcode.com/u/{handle}/",
+        "User-Agent": "Mozilla/5.0"
     }
 
     async with httpx.AsyncClient(timeout=15.0) as client:
-        response=await client.post(LEETCODE_GRAPHQL_URL,json=payload,headers=headers)
+        response = await client.post(
+            LEETCODE_GRAPHQL_URL,
+            json=payload,
+            headers=headers
+        )
 
-    if response.status_code!=200:
-        raise HTTPException(status_code=502,detail="Unable to fetch data from LeetCode")
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail="Unable to fetch data from LeetCode"
+        )
 
-    data=response.json()
+    data = response.json()
 
     if data.get("errors"):
-        raise HTTPException(status_code=404,detail="LeetCode user not found")
+        raise HTTPException(
+            status_code=404,
+            detail="LeetCode user not found"
+        )
 
-    result=data.get("data")
+    result = data.get("data")
 
     if not result or not result.get("matchedUser"):
-        raise HTTPException(status_code=404,detail="LeetCode user not found")
+        raise HTTPException(
+            status_code=404,
+            detail="LeetCode user not found"
+        )
 
-    user=result["matchedUser"]
-    profile=user.get("profile") or {}
-    skills=user.get("skillStats") or {}
+    user = result["matchedUser"]
+    profile = user.get("profile") or {}
+    skills = user.get("skillStats") or {}
 
-    solved_stats={
-        item["difficulty"]:item["count"]
+    solved_stats = {
+        item["difficulty"]: item["count"]
         for item in user["submitStats"]["acSubmissionNum"]
     }
 
-    question_stats={
-        item["difficulty"]:item["count"]
+    question_stats = {
+        item["difficulty"]: item["count"]
         for item in result["allQuestionsCount"]
     }
 
     return {
-        "handle":user["username"],
-        "real_name":profile.get("realName"),
-        "ranking":profile.get("ranking"),
-        "total_solved":solved_stats.get("All",0),
-        "easy_solved":solved_stats.get("Easy",0),
-        "medium_solved":solved_stats.get("Medium",0),
-        "hard_solved":solved_stats.get("Hard",0),
-        "total_questions":question_stats.get("All",0),
-        "easy_questions":question_stats.get("Easy",0),
-        "medium_questions":question_stats.get("Medium",0),
-        "hard_questions":question_stats.get("Hard",0),
-        "tags":skills
+        "handle": user["username"],
+        "real_name": profile.get("realName"),
+        "ranking": profile.get("ranking"),
+        "total_solved": solved_stats.get("All", 0),
+        "easy_solved": solved_stats.get("Easy", 0),
+        "medium_solved": solved_stats.get("Medium", 0),
+        "hard_solved": solved_stats.get("Hard", 0),
+        "total_questions": question_stats.get("All", 0),
+        "easy_questions": question_stats.get("Easy", 0),
+        "medium_questions": question_stats.get("Medium", 0),
+        "hard_questions": question_stats.get("Hard", 0),
+        "tags": skills
     }
 
 
-async def fetch_contests(handle:str):
-    payload={
-        "query":CONTEST_QUERY,
-        "variables":{"username":handle}
+async def fetch_contests(handle: str):
+    payload = {
+        "query": CONTEST_QUERY,
+        "variables": {"username": handle}
     }
-    headers={
-        "Content-Type":"application/json",
-        "Referer":f"https://leetcode.com/u/{handle}/",
-        "User-Agent":"Mozilla/5.0"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Referer": f"https://leetcode.com/u/{handle}/",
+        "User-Agent": "Mozilla/5.0"
     }
 
     async with httpx.AsyncClient(timeout=15.0) as client:
-        response=await client.post(LEETCODE_GRAPHQL_URL,json=payload,headers=headers)
+        response = await client.post(
+            LEETCODE_GRAPHQL_URL,
+            json=payload,
+            headers=headers
+        )
 
-    if response.status_code!=200:
-        raise HTTPException(status_code=502,detail="Unable to fetch contest data from LeetCode")
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail="Unable to fetch contest data from LeetCode"
+        )
 
-    data=response.json()
+    data = response.json()
 
     if data.get("errors"):
-        raise HTTPException(status_code=502,detail="Unable to fetch contest data from LeetCode")
+        raise HTTPException(
+            status_code=502,
+            detail="Unable to fetch contest data from LeetCode"
+        )
 
-    result=data.get("data") or {}
-
-    ranking=result.get("userContestRanking")
-    history=result.get("userContestRankingHistory")
+    result = data.get("data") or {}
 
     return {
-        "ranking":ranking,
-        "history":history or []
+        "ranking": result.get("userContestRanking"),
+        "history": result.get("userContestRankingHistory") or []
     }
